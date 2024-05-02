@@ -1,4 +1,4 @@
-from typing import Any, Literal, Callable, List, Tuple, Dict, TypedDict
+from typing import Any, Literal, Callable, List, Tuple, Dict, TypedDict, Optional
 from collections import namedtuple
 import numpy
 
@@ -119,4 +119,20 @@ ExecutionDevice = TypedDict('ExecutionDevice',
 	'product' : ExecutionDeviceProduct,
 	'video_memory' : ExecutionDeviceVideoMemory,
 	'utilization' : ExecutionDeviceUtilization
+})
+JobArgs = list[Optional[str]]
+JobStepAction = Literal['process', 'mix']
+JobStepStatus = Literal['queued', 'completed', 'failed']
+JobStep = TypedDict('JobStep',
+{
+	'action' : JobStepAction,
+	'args' : JobArgs,
+	'status' : JobStepStatus
+})
+Job = TypedDict('Job',
+{
+	'version' : str,
+	'date_created' : str,
+	'date_updated' : Optional[str],
+	'steps' : list[JobStep]
 })
