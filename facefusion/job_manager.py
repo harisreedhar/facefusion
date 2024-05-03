@@ -10,8 +10,8 @@ JOBS_PATH : Optional[str] = None
 
 
 def get_current_datetime() -> str:
-	date_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-	return str(date_time)
+	date_time = datetime.now().astimezone().strftime('%Y-%m-%dT%H:%M:%S%z')
+	return date_time
 
 
 def init_jobs(jobs_path) -> bool:
@@ -46,49 +46,44 @@ def create_job(job_id : str) -> bool:
 		"date_updated": None,
 		"steps": []
 	}
-	success = write_job_file(job, job_id)
-	return success
+	return write_job_file(job_id, job)
 
 
 def add_step(job_id : str, args : JobArgs) -> bool:
 	step = create_step(args)
 	job = read_job_file(job_id)
 	job['steps'].append(step)
-	success = update_job_file(job, job_id)
-	return success
+	return update_job_file(job_id, job)
 
 
 def remove_step(job_id : str, step_index : int) -> bool:
 	job = read_job_file(job_id)
-	step_length = len(job['steps'])
-	if step_index in range(step_length):
+	steps = job['steps']
+
+	if step_index in range(len(steps)):
 		job['steps'].pop(step_index)
-		success = update_job_file(job, job_id)
-	else:
-		success = False
-	return success
+		return update_job_file(job_id, job)
+	return False
 
 
 def set_step_status(job_id : str, step_index : int, status : JobStepStatus) -> bool:
 	job = read_job_file(job_id)
-	step_length = len(job['steps'])
-	if step_index in range(step_length):
+	steps = job['steps']
+
+	if step_index in range(len(steps)):
 		job['steps'][step_index]['status'] = status
-		success = update_job_file(job, job_id)
-	else:
-		success = False
-	return success
+		return update_job_file(job_id, job)
+	return False
 
 
 def set_step_action(job_id : str, step_index : int, action : JobStepAction) -> bool:
 	job = read_job_file(job_id)
-	step_length = len(job['steps'])
-	if step_index in range(step_length):
+	steps = job['steps']
+
+	if step_index in range(len(steps)):
 		job['steps'][step_index]['action'] = action
-		success = update_job_file(job, job_id)
-	else:
-		success = False
-	return success
+		return update_job_file(job_id, job)
+	return False
 
 
 def read_job_file(job_id : str) -> Optional[Job]:
@@ -98,14 +93,13 @@ def read_job_file(job_id : str) -> Optional[Job]:
 	return job
 
 
-def write_job_file(job, job_id) -> bool:
+def write_job_file(job_id, job) -> bool:
 	job_path = resolve_job_path(job_id)
 	with open(job_path, 'w') as job_file:
-		json.dump(job, job_file)
+		json.dump(job, job_file, indent = 4)
 	return is_file(job_path)
 
 
-def update_job_file(job, job_id) -> bool:
+def update_job_file(job_id, job) -> bool:
 	job['date_updated'] = get_current_datetime()
-	success = write_job_file(job, job_id)
-	return success
+	return write_job_file(job_id, job)

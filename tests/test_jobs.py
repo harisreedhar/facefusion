@@ -1,12 +1,17 @@
+import os
+import shutil
 import json
 
 import pytest
 
-from facefusion.job_serializer import init_jobs, create_job, add_step, remove_step, set_step_status, set_step_action
+from facefusion.job_manager import init_jobs, create_job, add_step, remove_step, set_step_status, set_step_action
 
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:
-	init_jobs('../.jobs')
+	jobs_path = '../.jobs'
+	if os.path.exists(jobs_path):
+		shutil.rmtree(jobs_path)
+	init_jobs(jobs_path)
 
 
 def test_job_create() -> None:
