@@ -14,7 +14,7 @@ def get_current_datetime() -> str:
 	return date_time
 
 
-def init_jobs(jobs_path) -> bool:
+def init_jobs(jobs_path : str) -> bool:
 	global JOBS_PATH
 
 	JOBS_PATH = jobs_path
@@ -93,13 +93,13 @@ def read_job_file(job_id : str) -> Optional[Job]:
 	return job
 
 
-def write_job_file(job_id, job) -> bool:
+def write_job_file(job_id : str, job : Job) -> bool:
 	job_path = resolve_job_path(job_id)
 	with open(job_path, 'w') as job_file:
 		json.dump(job, job_file, indent = 4)
 	return is_file(job_path)
 
 
-def update_job_file(job_id, job) -> bool:
+def update_job_file(job_id : str, job : Job) -> bool:
 	job['date_updated'] = get_current_datetime()
 	return write_job_file(job_id, job)
