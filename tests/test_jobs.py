@@ -20,7 +20,7 @@ def test_job_create() -> None:
 
 	with open('../.jobs/test_create_job.json', 'r') as file_actual:
 		job_actual = json.load(file_actual)
-	with open('../tests/providers/test_create_job.json', 'r') as file_expect:
+	with open('tests/providers/test_create_job.json', 'r') as file_expect:
 		job_expect = json.load(file_expect)
 
 	assert job_actual.get('version') == job_expect.get('version')
@@ -36,7 +36,7 @@ def test_create_job_with_one_step() -> None:
 
 	with open('../.jobs/test_create_job_with_one_step.json', 'r') as file_actual:
 		job_actual = json.load(file_actual)
-	with open('../tests/providers/test_create_job_with_one_step.json', 'r') as file_expect:
+	with open('tests/providers/test_create_job_with_one_step.json', 'r') as file_expect:
 		job_expect = json.load(file_expect)
 
 	assert job_actual.get('steps') == job_expect.get('steps')
@@ -50,7 +50,7 @@ def test_create_job_add_two_steps_and_remove_one_step() -> None:
 
 	with open('../.jobs/test_create_job_with_two_step.json', 'r') as file_actual:
 		job_actual = json.load(file_actual)
-	with open('../tests/providers/test_create_job_with_two_step.json', 'r') as file_expect:
+	with open('tests/providers/test_create_job_with_two_step.json', 'r') as file_expect:
 		job_expect = json.load(file_expect)
 
 	assert job_actual.get('steps') == job_expect.get('steps')
@@ -69,7 +69,7 @@ def test_create_job_with_one_step_and_set_status() -> None:
 
 	with open('../.jobs/test_create_job_with_one_step_and_set_status.json', 'r') as file_actual:
 		job_actual = json.load(file_actual)
-	with open('../tests/providers/test_create_job_with_one_step_and_set_status.json', 'r') as file_expect:
+	with open('tests/providers/test_create_job_with_one_step_and_set_status.json', 'r') as file_expect:
 		job_expect = json.load(file_expect)
 
 	assert job_actual.get('steps') == job_expect.get('steps')
@@ -89,7 +89,7 @@ def test_create_job_with_one_step_and_set_action() -> None:
 
 	with open('../.jobs/test_create_job_with_one_step_and_set_action.json', 'r') as file_actual:
 		job_actual = json.load(file_actual)
-	with open('../tests/providers/test_create_job_with_one_step_and_set_action.json', 'r') as file_expect:
+	with open('tests/providers/test_create_job_with_one_step_and_set_action.json', 'r') as file_expect:
 		job_expect = json.load(file_expect)
 
 	assert job_actual.get('steps') == job_expect.get('steps')
