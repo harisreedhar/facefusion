@@ -6,6 +6,7 @@ import pytest
 
 from facefusion.job_manager import init_jobs, create_job, add_step, remove_step, set_step_status, set_step_action
 
+
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:
 	jobs_path = '../.jobs'
