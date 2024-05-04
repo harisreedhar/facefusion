@@ -1,10 +1,14 @@
 import os
 import shutil
 import json
+import subprocess
 
 import pytest
 
+from facefusion.typing import JobStep
 from facefusion.job_manager import init_jobs, create_job, add_step, remove_step, set_step_status, set_step_action
+from facefusion.job_runner import run_step, run_job
+from facefusion.download import conditional_download
 
 
 @pytest.fixture(scope = 'module', autouse = True)
@@ -13,6 +17,14 @@ def before_all() -> None:
 	if os.path.exists(jobs_path):
 		shutil.rmtree(jobs_path)
 	init_jobs(jobs_path)
+
+	conditional_download('.assets/examples',
+						 [
+							 'https://github.com/facefusion/facefusion-assets/releases/download/examples/source.jpg',
+							 'https://github.com/facefusion/facefusion-assets/releases/download/examples/target-240p.mp4'
+						 ])
+	subprocess.run(
+		['ffmpeg', '-i', 'tests/.assets/examples/target-240p.mp4', '-vframes', '1', 'tests/.assets/examples/target-240p.jpg', '-y'])
 
 
 def test_job_create() -> None:
@@ -101,3 +113,31 @@ def test_create_job_with_one_step_and_set_action() -> None:
 		job_actual = json.load(file_actual)
 	assert job_actual.get('steps')[step_index]['action'] == 'mix'
 	assert not set_step_action('test_create_job_with_one_step_and_set_action', 12345, 'mix')
+
+
+def test_run_step() -> None:
+	step : JobStep = {
+		'action': 'process',
+		'args': ['--frame-processors', 'face_swapper', '--face-swapper-model', 'inswapper_128', '-s', 'tests/.assets/examples/source.jpg', '-t', 'tests/.assets/examples/target-240p.jpg', '-o', 'tests/.assets/examples/test_swap_face_to_image.jpg', '--headless'],
+		'status': 'queued'
+	}
+	assert run_step(step)
+
+
+def test_create_job_with_two_step_and_check_status() -> None:
+	create_job('test_create_job_with_one_step_and_check_status')
+	step = [ '--frame-processors', 'face_swapper', '--face-swapper-model', 'inswapper_128', '-s', 'tests/.assets/examples/source.jpg', '-t', 'tests/.assets/examples/target-240p.jpg', '-o', 'tests/.assets/examples/test_swap_face_to_image.jpg', '--headless' ]
+	add_step('test_create_job_with_one_step_and_check_status', step)
+	step = ['error step']
+	add_step('test_create_job_with_one_step_and_check_status', step)
+
+	with open('../.jobs/test_create_job_with_one_step_and_check_status.json', 'r') as file_actual:
+		job_actual = json.load(file_actual)
+
+	assert job_actual.get('steps')[0]['status'] == 'queued'
+	run_job('test_create_job_with_one_step_and_check_status')
+
+	with open('../.jobs/test_create_job_with_one_step_and_check_status.json', 'r') as file_actual:
+		job_actual = json.load(file_actual)
+	assert job_actual.get('steps')[0]['status'] == 'completed'
+	assert job_actual.get('steps')[1]['status'] == 'failed'
