@@ -1,6 +1,6 @@
 import sys
 import subprocess
-from facefusion.job_manager import read_job_file, set_step_status
+from facefusion.job_manager import read_job_file, set_step_status, move_job_file
 from facefusion.typing import JobStep
 
 
@@ -9,14 +9,13 @@ def run_jobs() -> None:
 	pass
 
 
-def run_job(job_id : str) -> None:
+def run_job(job_id : str) -> bool:
 	job = read_job_file(job_id)
 	steps = job['steps']
 	completed_steps = run_steps(job_id, steps)
 	if completed_steps == len(steps):
-		set_job_status(job_id, 'completed')
-	else:
-		set_job_status(job_id, 'failed')
+		return move_job_file(job_id, 'completed')
+	return move_job_file(job_id, 'failed')
 
 
 def run_step(step : JobStep) -> bool:
@@ -35,7 +34,3 @@ def run_steps(job_id : str, steps: list[JobStep]) -> int:
 			set_step_status(job_id, step_index, 'failed')
 	return completed_steps
 
-
-def set_job_status(job_id : str, status : str) -> None:
-	# TODO
-	pass

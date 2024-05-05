@@ -1,7 +1,8 @@
 import json
 import os
+import shutil
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from facefusion.filesystem import is_file, is_directory
 from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction
@@ -19,7 +20,13 @@ def init_jobs(jobs_path : str) -> bool:
 
 	JOBS_PATH = jobs_path
 	os.makedirs(JOBS_PATH, exist_ok = True)
-	return is_directory(JOBS_PATH)
+	queued_path = os.path.join(JOBS_PATH, 'queued')
+	os.makedirs(queued_path, exist_ok=True)
+	completed_path = os.path.join(JOBS_PATH, 'completed')
+	os.makedirs(completed_path, exist_ok=True)
+	failed_path = os.path.join(JOBS_PATH, 'failed')
+	os.makedirs(failed_path, exist_ok=True)
+	return is_directory(JOBS_PATH) and is_directory(queued_path) and is_directory(completed_path) and is_directory(failed_path)
 
 
 def resolve_job_path(job_id : str) -> str:
@@ -103,3 +110,23 @@ def write_job_file(job_id : str, job : Job) -> bool:
 def update_job_file(job_id : str, job : Job) -> bool:
 	job['date_updated'] = get_current_datetime()
 	return write_job_file(job_id, job)
+
+
+def move_job_file(job_id : str, job_status : str) -> bool:
+	job_path = resolve_job_path(job_id)
+	job_status_path = os.path.join(JOBS_PATH, job_status)
+	job_file_path_moved = shutil.move(job_path, job_status_path)
+	return is_file(job_file_path_moved )
+
+
+def find_job_file(job_id : str) -> Tuple[Optional[str], Optional[str]]:
+	job_file_name = job_id + '.json'
+	if os.path.exists(os.path.join(JOBS_PATH, job_file_name)):
+		return os.path.join(JOBS_PATH, job_file_name), None
+	elif os.path.exists(os.path.join(JOBS_PATH, 'queued', job_file_name)):
+		return os.path.join(JOBS_PATH, 'queued', job_file_name), 'queued'
+	elif os.path.exists(os.path.join(JOBS_PATH, 'completed', job_file_name)):
+		return os.path.join(JOBS_PATH, 'completed', job_file_name), 'completed'
+	elif os.path.exists(os.path.join(JOBS_PATH, 'failed', job_file_name)):
+		return os.path.join(JOBS_PATH, 'failed', job_file_name), 'failed'
+	return None, None
