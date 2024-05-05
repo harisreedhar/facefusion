@@ -19,12 +19,11 @@ def before_all() -> None:
 	init_jobs(jobs_path)
 
 	conditional_download('.assets/examples',
-						 [
-							 'https://github.com/facefusion/facefusion-assets/releases/download/examples/source.jpg',
-							 'https://github.com/facefusion/facefusion-assets/releases/download/examples/target-240p.mp4'
-						 ])
-	subprocess.run(
-		['ffmpeg', '-i', 'tests/.assets/examples/target-240p.mp4', '-vframes', '1', 'tests/.assets/examples/target-240p.jpg', '-y'])
+		[
+			'https://github.com/facefusion/facefusion-assets/releases/download/examples/source.jpg',
+			'https://github.com/facefusion/facefusion-assets/releases/download/examples/target-240p.mp4'
+	])
+	subprocess.run([ 'ffmpeg', '-i', '.assets/examples/target-240p.mp4', '-vframes', '1', '.assets/examples/target-240p.jpg' ])
 
 
 def test_job_create() -> None:
@@ -118,7 +117,7 @@ def test_create_job_with_one_step_and_set_action() -> None:
 def test_run_step() -> None:
 	step : JobStep = {
 		'action': 'process',
-		'args': ['--frame-processors', 'face_swapper', '--face-swapper-model', 'inswapper_128', '-s', './tests/.assets/examples/source.jpg', '-t', './tests/.assets/examples/target-240p.jpg', '-o', './tests/.assets/examples/test_swap_face_to_image.jpg', '--headless'],
+		'args': [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ],
 		'status': 'queued'
 	}
 	assert run_step(step)
@@ -135,7 +134,7 @@ def test_move_job_file() -> None:
 
 def test_create_job_with_one_completing_step_and_check_status() -> None:
 	create_job('test_create_job_with_one_completing_step_and_check_status')
-	step = [ '--frame-processors', 'face_swapper', '--face-swapper-model', 'inswapper_128', '-s', './tests/.assets/examples/source.jpg', '-t', './tests/.assets/examples/target-240p.jpg', '-o', './tests/.assets/examples/test_swap_face_to_image.jpg', '--headless' ]
+	step = [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ]
 	add_step('test_create_job_with_one_completing_step_and_check_status', step)
 
 	assert run_job('test_create_job_with_one_completing_step_and_check_status')

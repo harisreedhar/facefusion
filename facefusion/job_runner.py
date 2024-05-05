@@ -19,7 +19,7 @@ def run_job(job_id : str) -> bool:
 
 
 def run_step(step : JobStep) -> bool:
-	commands = [sys.executable, 'run.py', *step['args']]
+	commands = [sys.executable, *step['args']]
 	run = subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 	return 'image succeed' in run.stdout.decode() or 'video succeed' in run.stdout.decode()
 
