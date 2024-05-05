@@ -2,10 +2,10 @@ import json
 import os
 import shutil
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 
 from facefusion.filesystem import is_file, is_directory
-from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction
+from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus
 
 JOBS_PATH : Optional[str] = None
 
@@ -112,21 +112,23 @@ def update_job_file(job_id : str, job : Job) -> bool:
 	return write_job_file(job_id, job)
 
 
-def move_job_file(job_id : str, job_status : str) -> bool:
+def move_job_file(job_id : str, job_status : JobStatus) -> bool:
 	job_path = resolve_job_path(job_id)
 	job_status_path = os.path.join(JOBS_PATH, job_status)
 	job_file_path_moved = shutil.move(job_path, job_status_path)
 	return is_file(job_file_path_moved )
 
 
-def find_job_file(job_id : str) -> Tuple[Optional[str], Optional[str]]:
-	job_file_name = job_id + '.json'
-	if os.path.exists(os.path.join(JOBS_PATH, job_file_name)):
-		return os.path.join(JOBS_PATH, job_file_name), None
-	elif os.path.exists(os.path.join(JOBS_PATH, 'queued', job_file_name)):
-		return os.path.join(JOBS_PATH, 'queued', job_file_name), 'queued'
-	elif os.path.exists(os.path.join(JOBS_PATH, 'completed', job_file_name)):
-		return os.path.join(JOBS_PATH, 'completed', job_file_name), 'completed'
-	elif os.path.exists(os.path.join(JOBS_PATH, 'failed', job_file_name)):
-		return os.path.join(JOBS_PATH, 'failed', job_file_name), 'failed'
-	return None, None
+def get_queued_jobs() -> list[Optional[str]]:
+	queued_jobs = os.listdir(os.path.join(JOBS_PATH, 'queued'))
+	return queued_jobs
+
+
+def get_completed_jobs() -> list[Optional[str]]:
+	failed_jobs = os.listdir(os.path.join(JOBS_PATH, 'completed'))
+	return failed_jobs
+
+
+def get_failed_jobs() -> list[Optional[str]]:
+	failed_jobs = os.listdir(os.path.join(JOBS_PATH, 'failed'))
+	return failed_jobs
