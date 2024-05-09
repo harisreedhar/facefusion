@@ -3,6 +3,7 @@ import os
 import shutil
 from datetime import datetime
 from typing import Optional
+from pathlib import Path
 
 from facefusion.filesystem import is_file, is_directory
 from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus
@@ -116,19 +117,10 @@ def move_job_file(job_id : str, job_status : JobStatus) -> bool:
 	job_path = resolve_job_path(job_id)
 	job_status_path = os.path.join(JOBS_PATH, job_status)
 	job_file_path_moved = shutil.move(job_path, job_status_path)
-	return is_file(job_file_path_moved )
+	return is_file(job_file_path_moved)
 
 
-def get_queued_jobs() -> list[Optional[str]]:
-	queued_jobs = os.listdir(os.path.join(JOBS_PATH, 'queued'))
-	return queued_jobs
-
-
-def get_completed_jobs() -> list[Optional[str]]:
-	failed_jobs = os.listdir(os.path.join(JOBS_PATH, 'completed'))
-	return failed_jobs
-
-
-def get_failed_jobs() -> list[Optional[str]]:
-	failed_jobs = os.listdir(os.path.join(JOBS_PATH, 'failed'))
-	return failed_jobs
+def get_job_files_by_status(job_status : JobStatus) ->  list[Optional[str]]:
+	job_status_directory = Path(os.path.join(JOBS_PATH, job_status))
+	job_paths = [str(job_file.absolute()) for job_file in job_status_directory.iterdir()]
+	return job_paths

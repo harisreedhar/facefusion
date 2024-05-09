@@ -107,3 +107,14 @@ def list_directory(directory_path : str) -> Optional[List[str]]:
 		files = os.listdir(directory_path)
 		return sorted([ Path(file).stem for file in files if not Path(file).stem.startswith(('.', '__')) ])
 	return None
+
+
+def move_temps_to_temp(temps : list[str], target_path : str) -> None:
+	file_start_index = 1
+	for temp in temps:
+		files = sorted(Path(temp).iterdir())
+		for file in files:
+			target_file_path = os.path.join(target_path, str(file_start_index).zfill(4) + file.suffix)
+			shutil.move(file.absolute(), target_file_path)
+			file_start_index += 1
+		shutil.rmtree(temp)
