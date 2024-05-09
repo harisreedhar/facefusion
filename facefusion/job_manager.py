@@ -3,7 +3,6 @@ import os
 import shutil
 from datetime import datetime
 from typing import Optional
-from pathlib import Path
 
 from facefusion.filesystem import is_file, is_directory
 from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus
@@ -32,8 +31,14 @@ def init_jobs(jobs_path : str) -> bool:
 
 def resolve_job_path(job_id : str) -> str:
 	job_file_name = job_id + '.json'
-	job_path = os.path.join(JOBS_PATH, job_file_name)
-	return job_path
+	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'queued')):
+		return os.path.join(JOBS_PATH, 'queued', job_file_name)
+	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'failed')):
+		return os.path.join(JOBS_PATH, 'failed', job_file_name)
+	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'completed')):
+		return os.path.join(JOBS_PATH, 'completed', job_file_name)
+	job_file_path = os.path.join(JOBS_PATH, job_file_name)
+	return job_file_path
 
 
 def create_step(args : list[str]) -> JobStep:
@@ -64,7 +69,7 @@ def add_step(job_id : str, args : JobArgs) -> bool:
 	return update_job_file(job_id, job)
 
 
-def remove_step(job_id : str, step_index : int) -> bool:
+def delete_step(job_id : str, step_index : int) -> bool:
 	job = read_job_file(job_id)
 	steps = job['steps']
 
@@ -74,12 +79,22 @@ def remove_step(job_id : str, step_index : int) -> bool:
 	return False
 
 
-def set_step_status(job_id : str, step_index : int, status : JobStepStatus) -> bool:
+def update_step(job_id : str, step_index : int, args : JobArgs) -> bool:
 	job = read_job_file(job_id)
 	steps = job['steps']
 
 	if step_index in range(len(steps)):
-		job['steps'][step_index]['status'] = status
+		job['steps'][step_index] = create_step(args)
+		return update_job_file(job_id, job)
+	return False
+
+
+def set_step_status(job_id : str, step_index : int, step_status : JobStepStatus) -> bool:
+	job = read_job_file(job_id)
+	steps = job['steps']
+
+	if step_index in range(len(steps)):
+		job['steps'][step_index]['status'] = step_status
 		return update_job_file(job_id, job)
 	return False
 
@@ -115,12 +130,53 @@ def update_job_file(job_id : str, job : Job) -> bool:
 
 def move_job_file(job_id : str, job_status : JobStatus) -> bool:
 	job_path = resolve_job_path(job_id)
-	job_status_path = os.path.join(JOBS_PATH, job_status)
+	if job_status == 'unassigned':
+		job_status_path = JOBS_PATH
+	else:
+		job_status_path = os.path.join(JOBS_PATH, job_status)
 	job_file_path_moved = shutil.move(job_path, job_status_path)
 	return is_file(job_file_path_moved)
 
 
-def get_job_files_by_status(job_status : JobStatus) ->  list[Optional[str]]:
-	job_status_directory = Path(os.path.join(JOBS_PATH, job_status))
-	job_paths = [str(job_file.absolute()) for job_file in job_status_directory.iterdir()]
-	return job_paths
+def delete_job_file(job_id : str) -> bool:
+	job_path = resolve_job_path(job_id)
+	if is_file(job_path):
+		os.remove(job_path)
+		return True
+	return False
+
+
+def filter_non_job_args(args: list[str]) -> list[str]:
+	filtered_args = args.copy()
+	value_args = ['--job-id', '--job-step-delete-index', '--job-step-update-index']
+	non_value_args = ['--job-create', '--job-step-add', '--job-step-delete', '--job-step-update', '--job-run']
+	for arg in args:
+		if arg in non_value_args:
+			index = filtered_args.index(arg)
+			filtered_args.pop(index)
+		if arg in value_args:
+			index = filtered_args.index(arg)
+			filtered_args.pop(index)
+			filtered_args.pop(index)
+	return filtered_args
+
+
+def get_all_job_ids() -> list[Optional[str]]:
+	job_ids = []
+	job_ids.extend(get_job_ids('unassigned'))
+	job_ids.extend(get_job_ids('queued'))
+	job_ids.extend(get_job_ids('failed'))
+	job_ids.extend(get_job_ids('completed'))
+	return job_ids
+
+
+def get_job_ids(job_status : JobStatus) -> list[Optional[str]]:
+	job_ids = []
+	if job_status == 'unassigned':
+		job_file_names = os.listdir(JOBS_PATH)
+	else:
+		job_file_names = os.listdir(os.path.join(JOBS_PATH, job_status))
+	for job_file_name in job_file_names:
+		if is_file(os.path.join(JOBS_PATH, job_status, job_file_name)):
+			job_ids.append(os.path.splitext(job_file_name)[0])
+	return job_ids

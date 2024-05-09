@@ -122,7 +122,7 @@ ExecutionDevice = TypedDict('ExecutionDevice',
 })
 JobArgs = list[Optional[str]]
 JobStepAction = Literal['process', 'mix']
-JobStatus = Literal['queued', 'completed', 'failed']
+JobStatus = Literal['unassigned', 'queued', 'completed', 'failed']
 JobStepStatus = Literal['queued', 'completed', 'failed']
 JobStep = TypedDict('JobStep',
 {

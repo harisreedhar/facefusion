@@ -56,3 +56,13 @@ skip_audio : Optional[bool] = None
 frame_processors : List[str] = []
 # uis
 ui_layouts : List[str] = []
+# jobs
+job_id : Optional[str] = None
+job_run : Optional[bool] = None
+job_create : Optional[bool] = None
+job_delete : Optional[bool] = None
+job_step_add : Optional[bool] = None
+job_step_delete : Optional[bool] = None
+job_step_delete_index : Optional[int] = None
+job_step_update : Optional[bool] = None
+job_step_update_index : Optional[int] = None

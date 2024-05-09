@@ -27,6 +27,8 @@ from facefusion.download import conditional_download
 from facefusion.filesystem import list_directory, get_temp_frame_paths, create_temp, move_temp, clear_temp, is_image, is_video, filter_audio_paths, resolve_relative_path
 from facefusion.ffmpeg import extract_frames, merge_video, copy_image, finalize_image, restore_audio, replace_audio
 from facefusion.vision import read_image, read_static_images, detect_image_resolution, restrict_video_fps, create_image_resolutions, get_video_frame, detect_video_resolution, detect_video_fps, restrict_video_resolution, restrict_image_resolution, create_video_resolutions, pack_resolution, unpack_resolution
+from facefusion.job_manager import init_jobs, create_job, add_step, delete_step, update_step, filter_non_job_args, delete_job_file
+from facefusion.job_runner import run_jobs
 
 onnxruntime.set_default_logger_severity(3)
 warnings.filterwarnings('ignore', category = UserWarning, module = 'gradio')
@@ -107,6 +109,18 @@ def cli() -> None:
 	available_ui_layouts = list_directory('facefusion/uis/layouts')
 	group_uis = program.add_argument_group('uis')
 	group_uis.add_argument('--ui-layouts', help = wording.get('help.ui_layouts').format(choices = ', '.join(available_ui_layouts)), default = config.get_str_list('uis.ui_layouts', 'default'), nargs = '+')
+	# jobs
+	# TODO: wording & default
+	group_jobs = program.add_argument_group('jobs')
+	group_jobs.add_argument('--job-id', help = wording.get('help.job_id'), default = 'job_0')
+	group_jobs.add_argument('--job-run', help = wording.get('help.job_run'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-create', help = wording.get('help.job_id'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-step-add', help = wording.get('help.job_step_add'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-step-delete', help = wording.get('help.job_step_delete'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-step-delete-index', help = wording.get('help.job_step_delete'), default = 0)
+	group_jobs.add_argument('--job-step-update', help = wording.get('help.job_step_delete'), action = 'store_true', default = False)
+	group_jobs.add_argument('--job-step-update-index', help = wording.get('help.job_step_delete'), default = 0)
 	run(program)
 
 
@@ -202,12 +216,60 @@ def apply_args(program : ArgumentParser) -> None:
 		frame_processor_module.apply_args(program)
 	# uis
 	facefusion.globals.ui_layouts = args.ui_layouts
+	# jobs
+	facefusion.globals.job_id = args.job_id
+	facefusion.globals.job_run = args.job_run
+	facefusion.globals.job_create = args.job_create
+	facefusion.globals.job_delete = args.job_delete
+	facefusion.globals.job_step_add = args.job_step_add
+	facefusion.globals.job_step_delete = args.job_step_delete
+	facefusion.globals.job_step_delete_index = args.job_step_delete_index
 
 
 def run(program : ArgumentParser) -> None:
 	validate_args(program)
 	apply_args(program)
 	logger.init(facefusion.globals.log_level)
+
+	init_jobs('./.jobs')
+	if facefusion.globals.job_create:
+		if create_job(facefusion.globals.job_id):
+			logger.info('job created', __name__.upper())
+		else:
+			logger.error('job creation failed', __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_step_add:
+		if add_step(facefusion.globals.job_id, filter_non_job_args(sys.argv)):
+			logger.info('step added', __name__.upper())
+		else:
+			logger.error('step not added', __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_step_delete:
+		if delete_step(facefusion.globals.job_id, facefusion.globals.job_step_delete_index):
+			logger.info('step deleted', __name__.upper())
+		else:
+			logger.error('step not deleted', __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_step_update:
+		if update_step(facefusion.globals.job_id, facefusion.globals.job_step_update_index, filter_non_job_args(sys.argv)):
+			logger.info('step updated', __name__.upper())
+		else:
+			logger.error('step not updated', __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_delete:
+		if delete_job_file(facefusion.globals.job_id):
+			logger.info('job file deleted', __name__.upper())
+		else:
+			logger.error('job file not updated', __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_run:
+		run_jobs()
+		sys.exit(0)
 
 	if facefusion.globals.system_memory_limit > 0:
 		limit_system_memory(facefusion.globals.system_memory_limit)
