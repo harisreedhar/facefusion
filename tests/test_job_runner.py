@@ -10,7 +10,6 @@ from facefusion.job_manager import init_jobs, create_job, add_step
 from facefusion.job_runner import run_step, run_job
 from facefusion.download import conditional_download
 
-ROOT = os.getcwd()
 
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:

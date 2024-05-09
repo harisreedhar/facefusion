@@ -1,4 +1,3 @@
-import os
 import sys
 import subprocess
 from facefusion.job_manager import read_job_file, set_step_status, move_job_file
