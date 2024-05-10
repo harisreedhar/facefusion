@@ -32,7 +32,7 @@ def test_run_step() -> None:
 		'args': [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ],
 		'status': 'queued'
 	}
-	assert run_step(step) == 'completed'
+	assert run_step(step)
 
 
 def test_run_job_with_one_completing_step() -> None:
