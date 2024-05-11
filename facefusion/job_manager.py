@@ -31,13 +31,11 @@ def init_jobs(jobs_path : str) -> bool:
 
 def resolve_job_path(job_id : str) -> str:
 	job_file_name = job_id + '.json'
-	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'queued')):
-		return os.path.join(JOBS_PATH, 'queued', job_file_name)
-	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'failed')):
-		return os.path.join(JOBS_PATH, 'failed', job_file_name)
-	if job_file_name in os.listdir(os.path.join(JOBS_PATH, 'completed')):
-		return os.path.join(JOBS_PATH, 'completed', job_file_name)
 	job_file_path = os.path.join(JOBS_PATH, job_file_name)
+	job_statuses = ['queued', 'failed', 'completed']
+	for job_status in job_statuses:
+		if job_file_name in os.listdir(os.path.join(JOBS_PATH, job_status)):
+			job_file_path = os.path.join(JOBS_PATH, job_status, job_file_name)
 	return job_file_path
 
 
@@ -146,21 +144,6 @@ def delete_job_file(job_id : str) -> bool:
 	return False
 
 
-def filter_non_job_args(args: list[str]) -> list[str]:
-	filtered_args = args.copy()
-	value_args = ['--job-id', '--job-step-delete-index', '--job-step-update-index']
-	non_value_args = ['--job-create', '--job-step-add', '--job-step-delete', '--job-step-update', '--job-run']
-	for arg in args:
-		if arg in non_value_args:
-			index = filtered_args.index(arg)
-			filtered_args.pop(index)
-		if arg in value_args:
-			index = filtered_args.index(arg)
-			filtered_args.pop(index)
-			filtered_args.pop(index)
-	return filtered_args
-
-
 def get_all_job_ids() -> list[Optional[str]]:
 	job_ids = []
 	job_ids.extend(get_job_ids('unassigned'))
@@ -172,11 +155,24 @@ def get_all_job_ids() -> list[Optional[str]]:
 
 def get_job_ids(job_status : JobStatus) -> list[Optional[str]]:
 	job_ids = []
-	if job_status == 'unassigned':
-		job_file_names = os.listdir(JOBS_PATH)
-	else:
-		job_file_names = os.listdir(os.path.join(JOBS_PATH, job_status))
+	job_sub_path = '' if job_status == 'unassigned' else job_status
+	job_file_names = os.listdir(os.path.join(JOBS_PATH, job_sub_path))
 	for job_file_name in job_file_names:
-		if is_file(os.path.join(JOBS_PATH, job_status, job_file_name)):
+		if is_file(os.path.join(JOBS_PATH, job_sub_path, job_file_name)):
 			job_ids.append(os.path.splitext(job_file_name)[0])
 	return job_ids
+
+
+def filter_non_job_args(args: list[str]) -> list[str]:
+	filtered_args = args.copy()
+	value_args = ['--job-id', '--job-delete-step-index', '--job-update-step-index', '--job-create', '--job-delete', '--job-add-step', '--job-delete-step', '--job-update-step']
+	non_value_args = ['--job-run']
+	for arg in args:
+		if arg in non_value_args:
+			index = filtered_args.index(arg)
+			filtered_args.pop(index)
+		if arg in value_args:
+			index = filtered_args.index(arg)
+			filtered_args.pop(index)
+			filtered_args.pop(index)
+	return filtered_args

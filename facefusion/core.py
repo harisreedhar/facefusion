@@ -18,7 +18,7 @@ from facefusion.face_store import get_reference_faces, append_reference_face
 from facefusion import face_analyser, face_masker, content_analyser, config, process_manager, metadata, logger, wording, voice_extractor
 from facefusion.content_analyser import analyse_image, analyse_video
 from facefusion.processors.frame.core import get_frame_processors_modules, load_frame_processor_module
-from facefusion.common_helper import create_metavar, get_first
+from facefusion.common_helper import create_metavar, get_first, has_argument
 from facefusion.execution import encode_execution_providers, decode_execution_providers
 from facefusion.normalizer import normalize_output_path, normalize_padding, normalize_fps
 from facefusion.memory import limit_system_memory
@@ -112,15 +112,14 @@ def cli() -> None:
 	# jobs
 	# TODO: wording & default
 	group_jobs = program.add_argument_group('jobs')
-	group_jobs.add_argument('--job-id', help = wording.get('help.job_id'), default = 'job_0')
 	group_jobs.add_argument('--job-run', help = wording.get('help.job_run'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-create', help = wording.get('help.job_id'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-step-add', help = wording.get('help.job_step_add'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-step-delete', help = wording.get('help.job_step_delete'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-step-delete-index', help = wording.get('help.job_step_delete'), default = 0)
-	group_jobs.add_argument('--job-step-update', help = wording.get('help.job_step_delete'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-step-update-index', help = wording.get('help.job_step_delete'), default = 0)
+	group_jobs.add_argument('--job-create', help = wording.get('help.job_id'), default = 'job_0')
+	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), default = 'job_0')
+	group_jobs.add_argument('--job-add-step', help = wording.get('help.job_add_step'), default = 'job_0')
+	group_jobs.add_argument('--job-delete-step', help = wording.get('help.job_delete_step'), default = 'job_0')
+	group_jobs.add_argument('--job-delete-step-index', help = wording.get('help.job_delete_step_index'), type = int, required = has_argument('--job-delete-step'))
+	group_jobs.add_argument('--job-update-step', help = wording.get('help.job_update_step'), default = 'job_0')
+	group_jobs.add_argument('--job-update-step-index', help = wording.get('help.job_update_step_index'), type = int, required = has_argument('--job-update-step'))
 	run(program)
 
 
@@ -217,13 +216,14 @@ def apply_args(program : ArgumentParser) -> None:
 	# uis
 	facefusion.globals.ui_layouts = args.ui_layouts
 	# jobs
-	facefusion.globals.job_id = args.job_id
 	facefusion.globals.job_run = args.job_run
 	facefusion.globals.job_create = args.job_create
 	facefusion.globals.job_delete = args.job_delete
-	facefusion.globals.job_step_add = args.job_step_add
-	facefusion.globals.job_step_delete = args.job_step_delete
-	facefusion.globals.job_step_delete_index = args.job_step_delete_index
+	facefusion.globals.job_add_step = args.job_add_step
+	facefusion.globals.job_delete_step = args.job_delete_step
+	facefusion.globals.job_delete_step_index = args.job_delete_step_index
+	facefusion.globals.job_update_step = args.job_update_step
+	facefusion.globals.job_update_step_index = args.job_update_step_index
 
 
 def run(program : ArgumentParser) -> None:
@@ -232,36 +232,37 @@ def run(program : ArgumentParser) -> None:
 	logger.init(facefusion.globals.log_level)
 
 	init_jobs('./.jobs')
-	if facefusion.globals.job_create:
-		if create_job(facefusion.globals.job_id):
+	# TODO: logger wording
+	if has_argument('--job-create'):
+		if create_job(facefusion.globals.job_create):
 			logger.info('job created', __name__.upper())
 		else:
 			logger.error('job creation failed', __name__.upper())
 		sys.exit(0)
 
-	if facefusion.globals.job_step_add:
-		if add_step(facefusion.globals.job_id, filter_non_job_args(sys.argv)):
+	if has_argument('--job-add-step'):
+		if add_step(facefusion.globals.job_add_step, filter_non_job_args(sys.argv)):
 			logger.info('step added', __name__.upper())
 		else:
 			logger.error('step not added', __name__.upper())
 		sys.exit(0)
 
-	if facefusion.globals.job_step_delete:
-		if delete_step(facefusion.globals.job_id, facefusion.globals.job_step_delete_index):
+	if has_argument('--job-delete-step'):
+		if delete_step(facefusion.globals.job_delete_step, facefusion.globals.job_delete_step_index):
 			logger.info('step deleted', __name__.upper())
 		else:
 			logger.error('step not deleted', __name__.upper())
 		sys.exit(0)
 
-	if facefusion.globals.job_step_update:
-		if update_step(facefusion.globals.job_id, facefusion.globals.job_step_update_index, filter_non_job_args(sys.argv)):
+	if has_argument('--job-update-step'):
+		if update_step(facefusion.globals.job_update_step, facefusion.globals.job_update_step_index, filter_non_job_args(sys.argv)):
 			logger.info('step updated', __name__.upper())
 		else:
 			logger.error('step not updated', __name__.upper())
 		sys.exit(0)
 
-	if facefusion.globals.job_delete:
-		if delete_job_file(facefusion.globals.job_id):
+	if has_argument('--job-delete'):
+		if delete_job_file(facefusion.globals.job_delete):
 			logger.info('job file deleted', __name__.upper())
 		else:
 			logger.error('job file not updated', __name__.upper())

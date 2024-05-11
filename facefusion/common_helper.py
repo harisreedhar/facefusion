@@ -1,5 +1,6 @@
 from typing import List, Any
 import numpy
+import sys
 
 
 def create_metavar(ranges : List[Any]) -> str:
@@ -16,3 +17,7 @@ def create_float_range(start : float, stop : float, step : float) -> List[float]
 
 def get_first(__list__ : Any) -> Any:
 	return next(iter(__list__), None)
+
+
+def has_argument(argument : str) -> bool:
+	return any(argv == argument for argv in sys.argv)
