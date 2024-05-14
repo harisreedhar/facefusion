@@ -30,9 +30,10 @@ def run_job(job_id : str) -> bool:
 
 
 def run_step(step : JobStep) -> bool:
-	commands = [sys.executable, *step.get('args')]
+	if len(step.get('args')) == 0:
+		return False
+	commands = [sys.executable, 'run.py', '--headless', *step.get('args')]
 	run = subprocess.run(commands, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
-	# run.returncode == 0
 	return run.returncode == 0 and 'image succeed' in run.stdout.decode() or 'video succeed' in run.stdout.decode()
 
 

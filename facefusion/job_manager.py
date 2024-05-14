@@ -5,9 +5,10 @@ from datetime import datetime
 from typing import Optional
 
 from facefusion.filesystem import is_file, is_directory
-from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus
+from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus, Args
 
 JOBS_PATH : Optional[str] = None
+ARGS : Optional[Args] = None
 
 
 def get_current_datetime() -> str:
@@ -27,6 +28,20 @@ def init_jobs(jobs_path : str) -> bool:
 	failed_path = os.path.join(JOBS_PATH, 'failed')
 	os.makedirs(failed_path, exist_ok=True)
 	return is_directory(JOBS_PATH) and is_directory(queued_path) and is_directory(completed_path) and is_directory(failed_path)
+
+
+def register_args(args : list[str], has_value : bool) -> None:
+	global ARGS
+
+	if ARGS is None:
+		ARGS = {
+			'valued_args' : [],
+			'non_valued_args' : []
+		}
+	if has_value:
+		ARGS['valued_args'].extend(args)
+	else:
+		ARGS['non_valued_args'].extend(args)
 
 
 def resolve_job_path(job_id : str) -> str:
@@ -163,16 +178,21 @@ def get_job_ids(job_status : JobStatus) -> list[Optional[str]]:
 	return job_ids
 
 
-def filter_non_job_args(args: list[str]) -> list[str]:
-	filtered_args = args.copy()
-	value_args = ['--job-id', '--job-delete-step-index', '--job-update-step-index', '--job-create', '--job-delete', '--job-add-step', '--job-delete-step', '--job-update-step']
-	non_value_args = ['--job-run']
-	for arg in args:
-		if arg in non_value_args:
-			index = filtered_args.index(arg)
-			filtered_args.pop(index)
-		if arg in value_args:
-			index = filtered_args.index(arg)
-			filtered_args.pop(index)
-			filtered_args.pop(index)
+def filter_args(args: list[str]) -> list[str]:
+	valued_args = ARGS.get('valued_args')
+	non_valued_args = ARGS.get('non_valued_args')
+	filtered_args = []
+
+	for index, arg in enumerate(args):
+		if arg in valued_args:
+			filtered_args.append(arg)
+			for sub_index in range(index + 1, len(args)):
+				if args[sub_index].startswith('--') or args[sub_index].startswith('-'):
+					break
+				else:
+					filtered_args.append(args[sub_index])
+		elif arg in non_valued_args:
+			filtered_args.append(arg)
+		else:
+			continue
 	return filtered_args

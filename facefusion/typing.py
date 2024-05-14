@@ -120,6 +120,11 @@ ExecutionDevice = TypedDict('ExecutionDevice',
 	'video_memory' : ExecutionDeviceVideoMemory,
 	'utilization' : ExecutionDeviceUtilization
 })
+Args = TypedDict('Args',
+{
+	'valued_args' : list[Optional[str]],
+	'non_valued_args' : list[Optional[str]],
+})
 JobArgs = list[Optional[str]]
 JobStepAction = Literal['process', 'mix']
 JobStatus = Literal['unassigned', 'queued', 'completed', 'failed']

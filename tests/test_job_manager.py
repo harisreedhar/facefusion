@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from facefusion.job_manager import init_jobs, create_job, add_step, delete_step, set_step_status, set_step_action, move_job_file, delete_job_file
+from facefusion.job_manager import init_jobs, create_job, add_step, delete_step, set_step_status, set_step_action, move_job_file, delete_job_file, register_args, filter_args
 
 
 @pytest.fixture(scope = 'module', autouse = True)
@@ -143,3 +143,23 @@ def test_add_remove_after_move_job_file() -> None:
 	assert os.path.exists('./.jobs/completed/test_add_remove_after_move_job_file_to_completed.json')
 	assert add_step('test_add_remove_after_move_job_file_to_completed', [])
 	assert delete_step('test_add_remove_after_move_job_file_to_completed', 0)
+
+
+def test_filter_args() -> None:
+	register_args(['-s', '--source', '-t', '--target', '-o', '--output'], True)
+	register_args(['--face-analyser-order', '--face-analyser-age', '--face-analyser-gender', '--face-detector-model', '--face-detector-size', '--face-detector-score', '--face-landmarker-score'], True)
+	register_args(['--face-selector-mode', '--reference-face-position', '--reference-face-distance', '--reference-frame-number'],True)
+	register_args(['--face-mask-types', '--face-mask-blur', '--face-mask-padding', '--face-mask-regions'], True)
+	register_args(['--trim-frame-start', '--trim-frame-end', '--temp-frame-format'], True)
+	register_args(['--keep-temp'], False)
+	register_args(['--output-image-quality', '--output-image-resolution', '--output-video-encoder', '--output-video-preset', '--output-video-quality', '--output-video-resolution', '--output-video-fps'], True)
+	register_args(['--skip-audio'], False)
+	register_args(['--face-debugger-items'], True)
+	register_args(['--face-enhancer-model', '--face-enhancer-blend'], True)
+	register_args(['--face-swapper-model'], True)
+	register_args(['--frame-colorizer-model', '--frame-colorizer-blend', '--frame-colorizer-size'], True)
+	register_args(['--frame-enhancer-model', '--frame-enhancer-blend'], True)
+	register_args(['--lip-syncer-model'], True)
+	args = ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--job-run', '--skip-download', '--face-mask-padding', '0', '0', '0', '0']
+	assert filter_args(args) == ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--face-mask-padding', '0', '0', '0', '0']
+	# TODO : more detailed test

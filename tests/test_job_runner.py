@@ -29,7 +29,7 @@ def before_all() -> None:
 def test_run_step() -> None:
 	step : JobStep = {
 		'action': 'process',
-		'args': [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ],
+		'args': [ '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg' ],
 		'status': 'queued'
 	}
 	assert run_step(step)
@@ -37,7 +37,7 @@ def test_run_step() -> None:
 
 def test_run_job_with_one_completing_step() -> None:
 	create_job('test_create_job_with_one_completing_step_and_check_status')
-	step = [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ]
+	step = [ '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg' ]
 	add_step('test_create_job_with_one_completing_step_and_check_status', step)
 
 	assert run_job('test_create_job_with_one_completing_step_and_check_status')
@@ -70,7 +70,7 @@ def test_run_job_with_one_failing_step_and_update_with_completing_step() -> None
 		job_actual = json.load(file_actual)
 	assert job_actual['steps'][0]['status'] == 'failed'
 
-	step = [ 'run.py', '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg', '--headless' ]
+	step = [ '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg' ]
 	update_step('test_run_job_with_one_failing_step_update_with_completing_step', 0, step)
 	assert run_job('test_run_job_with_one_failing_step_update_with_completing_step')
 	assert os.path.exists('.jobs/completed/test_run_job_with_one_failing_step_update_with_completing_step.json')

@@ -6,6 +6,7 @@ import numpy
 import onnxruntime
 
 import facefusion.globals
+import facefusion.job_manager
 import facefusion.processors.frame.core as frame_processors
 from facefusion import config, process_manager, logger, wording
 from facefusion.execution import apply_execution_provider_options
@@ -78,6 +79,7 @@ def set_options(key : Literal['model'], value : Any) -> None:
 
 def register_args(program : ArgumentParser) -> None:
 	program.add_argument('--lip-syncer-model', help = wording.get('help.lip_syncer_model'), default = config.get_str_value('frame_processors.lip_syncer_model', 'wav2lip_gan'), choices = frame_processors_choices.lip_syncer_models)
+	facefusion.job_manager.register_args(['--lip-syncer-model'], True)
 
 
 def apply_args(program : ArgumentParser) -> None:
