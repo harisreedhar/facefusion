@@ -124,10 +124,10 @@ def cli() -> None:
 	group_jobs.add_argument('--job-run', help = wording.get('help.job_run'), action = 'store_true', default = False)
 	group_jobs.add_argument('--job-create', help = wording.get('help.job_id'), default = 'job_0')
 	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), default = 'job_0')
-	group_jobs.add_argument('--job-add-step', help = wording.get('help.job_add_step'), default = 'job_0')
+	group_jobs.add_argument('--job-add-step', help = wording.get('help.job_add_step'), default = 'job_0') # TODO : index
 	group_jobs.add_argument('--job-delete-step', help = wording.get('help.job_delete_step'), default = 'job_0')
 	group_jobs.add_argument('--job-delete-step-index', help = wording.get('help.job_delete_step_index'), type = int, required = has_argument('--job-delete-step'))
-	group_jobs.add_argument('--job-update-step', help = wording.get('help.job_update_step'), default = 'job_0')
+	group_jobs.add_argument('--job-update-step', help = wording.get('help.job_update_step'), default = 'job_0') # TODO : replace with delete & add
 	group_jobs.add_argument('--job-update-step-index', help = wording.get('help.job_update_step_index'), type = int, required = has_argument('--job-update-step'))
 	run(program)
 
@@ -240,6 +240,7 @@ def run(program : ArgumentParser) -> None:
 	apply_args(program)
 	logger.init(facefusion.globals.log_level)
 
+	# todo: move this job handling to a method - run() is just a router method, it does not contain too much logic
 	init_jobs('./.jobs')
 	# TODO: logger wording
 	if has_argument('--job-create'):

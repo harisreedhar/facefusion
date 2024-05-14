@@ -10,7 +10,7 @@ from facefusion.job_manager import init_jobs, create_job, add_step, delete_step,
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:
 	jobs_path = './.jobs'
-	if os.path.exists(jobs_path):
+	if os.path.exists(jobs_path): #todo either init_jobs() does this or we need clear_jobs()
 		shutil.rmtree(jobs_path)
 	init_jobs(jobs_path)
 
@@ -122,7 +122,7 @@ def test_move_job_file() -> None:
 
 	create_job('test_create_and_move_job_file_to_completed')
 	assert move_job_file('test_create_and_move_job_file_to_completed', 'completed')
-	assert os.path.exists('./.jobs/completed/test_create_and_move_job_file_to_completed.json')
+	assert os.path.exists('./.jobs/completed/test_create_and_move_job_file_to_completed.json') # todo: is this needed? move_job_file should be false when not, so you just have to test the return value of move_job_file()
 
 
 def test_add_remove_after_move_job_file() -> None:
@@ -163,3 +163,5 @@ def test_filter_args() -> None:
 	args = ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--job-run', '--skip-download', '--face-mask-padding', '0', '0', '0', '0']
 	assert filter_args(args) == ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--face-mask-padding', '0', '0', '0', '0']
 	# TODO : more detailed test
+
+	# todo: I would say most of the register_args() calls here are duplicated testing - you don't have to test them all

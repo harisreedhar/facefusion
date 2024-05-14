@@ -8,7 +8,7 @@ from facefusion.filesystem import is_file, is_directory
 from facefusion.typing import JobStep, Job, JobArgs, JobStepStatus, JobStepAction, JobStatus, Args
 
 JOBS_PATH : Optional[str] = None
-ARGS : Optional[Args] = None
+ARGS : Optional[Args] = None #todo: ARGS_REGISTRY
 
 
 def get_current_datetime() -> str:
@@ -34,7 +34,8 @@ def register_args(args : list[str], has_value : bool) -> None:
 	global ARGS
 
 	if ARGS is None:
-		ARGS = {
+		ARGS =\
+		{
 			'valued_args' : [],
 			'non_valued_args' : []
 		}
@@ -47,7 +48,8 @@ def register_args(args : list[str], has_value : bool) -> None:
 def resolve_job_path(job_id : str) -> str:
 	job_file_name = job_id + '.json'
 	job_file_path = os.path.join(JOBS_PATH, job_file_name)
-	job_statuses = ['queued', 'failed', 'completed']
+	job_statuses = [ 'queued', 'failed', 'completed' ]
+
 	for job_status in job_statuses:
 		if job_file_name in os.listdir(os.path.join(JOBS_PATH, job_status)):
 			job_file_path = os.path.join(JOBS_PATH, job_status, job_file_name)
@@ -67,7 +69,7 @@ def create_step(args : list[str]) -> JobStep:
 def create_job(job_id : str) -> bool:
 	job : Job =\
 	{
-		"version": "1",
+		"version": "1", # todo: use single quote
 		"date_created": get_current_datetime(),
 		"date_updated": None,
 		"steps": []
@@ -78,7 +80,7 @@ def create_job(job_id : str) -> bool:
 def add_step(job_id : str, args : JobArgs) -> bool:
 	step = create_step(args)
 	job = read_job_file(job_id)
-	job['steps'].append(step)
+	job['steps'].append(step) # todo: use job.get('steps') everywhere
 	return update_job_file(job_id, job)
 
 
@@ -124,8 +126,9 @@ def set_step_action(job_id : str, step_index : int, action : JobStepAction) -> b
 
 def read_job_file(job_id : str) -> Optional[Job]:
 	job_path = resolve_job_path(job_id)
+
 	with open(job_path, 'r') as job_file:
-		job = json.load(job_file)
+		job = json.load(job_file) # todo: return directly other wise return None
 	return job
 
 
@@ -137,7 +140,7 @@ def write_job_file(job_id : str, job : Job) -> bool:
 
 
 def update_job_file(job_id : str, job : Job) -> bool:
-	job['date_updated'] = get_current_datetime()
+	job['date_updated'] = get_current_datetime() # todo: use job.get()
 	return write_job_file(job_id, job)
 
 
@@ -170,8 +173,9 @@ def get_all_job_ids() -> list[Optional[str]]:
 
 def get_job_ids(job_status : JobStatus) -> list[Optional[str]]:
 	job_ids = []
-	job_sub_path = '' if job_status == 'unassigned' else job_status
+	job_sub_path = '' if job_status == 'unassigned' else job_status # todo: I do not understand why an empty string is needed here (which does not mean I want you to explain it to me)
 	job_file_names = os.listdir(os.path.join(JOBS_PATH, job_sub_path))
+
 	for job_file_name in job_file_names:
 		if is_file(os.path.join(JOBS_PATH, job_sub_path, job_file_name)):
 			job_ids.append(os.path.splitext(job_file_name)[0])
@@ -184,6 +188,7 @@ def filter_args(args: list[str]) -> list[str]:
 	filtered_args = []
 
 	for index, arg in enumerate(args):
+		# todo: too much if else nesting here / reduce complexity of paths
 		if arg in valued_args:
 			filtered_args.append(arg)
 			for sub_index in range(index + 1, len(args)):

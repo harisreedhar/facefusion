@@ -2,7 +2,6 @@ import os
 import shutil
 import json
 import subprocess
-
 import pytest
 
 from facefusion.typing import JobStep
@@ -14,20 +13,21 @@ from facefusion.download import conditional_download
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:
 	jobs_path = './.jobs'
-	if os.path.exists(jobs_path):
+	if os.path.exists(jobs_path): # todo: introduce clear_jobs()
 		shutil.rmtree(jobs_path)
 	init_jobs(jobs_path)
 
 	conditional_download('.assets/examples',
-		[
-			'https://github.com/facefusion/facefusion-assets/releases/download/examples/source.jpg',
-			'https://github.com/facefusion/facefusion-assets/releases/download/examples/target-240p.mp4'
+	[
+		'https://github.com/facefusion/facefusion-assets/releases/download/examples/source.jpg',
+		'https://github.com/facefusion/facefusion-assets/releases/download/examples/target-240p.mp4'
 	])
 	subprocess.run([ 'ffmpeg', '-i', '.assets/examples/target-240p.mp4', '-vframes', '1', '.assets/examples/target-240p.jpg' ])
 
 
 def test_run_step() -> None:
-	step : JobStep = {
+	step : JobStep =\
+	{
 		'action': 'process',
 		'args': [ '--frame-processors', 'face_swapper', '-s', '.assets/examples/source.jpg', '-t', '.assets/examples/target-240p.jpg', '-o', '.assets/examples/test_swap_face_to_image.jpg' ],
 		'status': 'queued'
@@ -75,5 +75,5 @@ def test_run_job_with_one_failing_step_and_update_with_completing_step() -> None
 	assert run_job('test_run_job_with_one_failing_step_update_with_completing_step')
 	assert os.path.exists('.jobs/completed/test_run_job_with_one_failing_step_update_with_completing_step.json')
 	with open('.jobs/completed/test_run_job_with_one_failing_step_update_with_completing_step.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
+		job_actual = json.load(file_actual) # todo: we do not have am ethod that does read the status?
 	assert job_actual['steps'][0]['status'] == 'completed'
