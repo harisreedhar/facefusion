@@ -65,7 +65,7 @@ def test_insert_step() -> None:
 	assert get_total_steps('test_job_insert_step') == 2
 	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[0].get('args') == step
 
-	step = ['-s', 'abc.jpg', '-t', 'def.jpg', '-o', './output']
+	step = [ '-s', 'abc.jpg', '-t', 'def.jpg', '-o', './output' ]
 	assert insert_step('test_job_insert_step', -1, step)
 	assert get_total_steps('test_job_insert_step') == 3
 	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[-1].get('args') == step
