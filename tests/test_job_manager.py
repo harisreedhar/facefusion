@@ -33,7 +33,7 @@ def test_create_job() -> None:
 	assert job_actual.get('date_created')
 	assert job_actual.get('date_updated') is None
 	assert job_actual.get('steps') == job_expect.get('steps')
-	assert len(job_actual.get('steps')) == 0
+	assert get_total_steps('test_create_job') == 0
 
 
 def test_add_step() -> None:
@@ -49,11 +49,13 @@ def test_remove_step() -> None:
 
 	assert remove_step('test_job_remove_step', 0)
 	assert get_total_steps('test_job_remove_step') == 2
-	assert read_json('./.jobs/queued/test_job_remove_step.json').get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
+	job = read_json('./.jobs/queued/test_job_remove_step.json')
+	assert job.get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
 
 	assert remove_step('test_job_remove_step', -1)
 	assert get_total_steps('test_job_remove_step') == 1
-	assert read_json('./.jobs/queued/test_job_remove_step.json').get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
+	job = read_json('./.jobs/queued/test_job_remove_step.json')
+	assert job.get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
 
 
 def test_insert_step() -> None:
@@ -63,12 +65,14 @@ def test_insert_step() -> None:
 	step = [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
 	assert insert_step('test_job_insert_step', 0, step)
 	assert get_total_steps('test_job_insert_step') == 2
-	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[0].get('args') == step
+	job = read_json('./.jobs/queued/test_job_insert_step.json')
+	assert job.get('steps')[0].get('args') == step
 
 	step = [ '-s', 'abc.jpg', '-t', 'def.jpg', '-o', './output' ]
 	assert insert_step('test_job_insert_step', -1, step)
 	assert get_total_steps('test_job_insert_step') == 3
-	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[-1].get('args') == step
+	job = read_json('./.jobs/queued/test_job_insert_step.json')
+	assert job.get('steps')[-1].get('args') == step
 
 
 def test_move_job() -> None:
