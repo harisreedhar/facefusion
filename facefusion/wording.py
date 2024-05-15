@@ -44,6 +44,19 @@ WORDING : Dict[str, Any] =\
 	'ui_layout_not_loaded': 'UI layout {ui_layout} could not be loaded',
 	'ui_layout_not_implemented': 'UI layout {ui_layout} not implemented correctly',
 	'stream_not_loaded': 'Stream {stream_mode} could not be loaded',
+	'job_created': 'Job created',
+	'job_not_created': 'Job not created',
+	'job_deleted': 'Job deleted',
+	'job_not_deleted': 'Job not deleted',
+	'job_step_added': 'Job step added',
+	'job_step_not_added': 'Job step not added',
+	'job_step_inserted': 'Job step inserted',
+	'job_step_not_inserted': 'Job step not inserted',
+	'job_step_removed': 'Job step removed',
+	'job_step_not_removed': 'Job step not removed',
+	'job_step_updated': 'Job step updated',
+	'job_step_not_updated': 'Job step not updated',
+	'job_processed': '{completed_steps} of {total_steps} steps processed in {job_id}',
 	'point': '.',
 	'comma': ',',
 	'colon': ':',
@@ -116,7 +129,15 @@ WORDING : Dict[str, Any] =\
 		'frame_enhancer_blend': 'blend the enhanced into the previous frame',
 		'lip_syncer_model': 'choose the model responsible for syncing the lips',
 		# uis
-		'ui_layouts': 'launch a single or multiple UI layouts (choices: {choices}, ...)'
+		'ui_layouts': 'launch a single or multiple UI layouts (choices: {choices}, ...)',
+		# jobs
+		'job_run': 'run all queued jobs',
+		'job_create': 'specify job-id to create job',
+		'job_delete': 'specify job-id to delete job',
+		'job_add_step': 'specify job-id to append step',
+		'job_insert_step': 'specify job-id and index to insert step in particular position',
+		'job_remove_step': 'specify job-id and index to remove step in particular position',
+		'job_update_step': 'specify job-id and index to update step in particular position'
 	},
 	'uis':
 	{

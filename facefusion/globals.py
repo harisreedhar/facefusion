@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from facefusion.typing import LogLevel, VideoMemoryStrategy, FaceSelectorMode, FaceAnalyserOrder, FaceAnalyserAge, FaceAnalyserGender, FaceMaskType, FaceMaskRegion, OutputVideoEncoder, OutputVideoPreset, FaceDetectorModel, FaceRecognizerModel, TempFrameFormat, Padding
 
@@ -61,7 +61,6 @@ job_run : Optional[bool] = None
 job_create : Optional[str] = None
 job_delete : Optional[str] = None
 job_add_step : Optional[str] = None
-job_delete_step : Optional[str] = None
-job_delete_step_index : Optional[int] = None
-job_update_step : Optional[str] = None
-job_update_step_index : Optional[int] = None
+job_insert_step : Optional[Tuple[str, int]] = None
+job_remove_step : Optional[Tuple[str, int]] = None
+job_update_step : Optional[Tuple[str, int]] = None

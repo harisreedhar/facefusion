@@ -1,27 +1,33 @@
-import os
 import shutil
 import json
 
 import pytest
 
-from facefusion.job_manager import init_jobs, create_job, add_step, delete_step, set_step_status, set_step_action, move_job_file, delete_job_file, register_args, filter_args
+from typing import Any
+from facefusion.job_manager import init_jobs, clear_jobs, create_job, add_step, remove_step, get_total_steps, insert_step, move_job_file, delete_job_file, get_job_status
 
 
 @pytest.fixture(scope = 'module', autouse = True)
 def before_all() -> None:
 	jobs_path = './.jobs'
-	if os.path.exists(jobs_path): #todo either init_jobs() does this or we need clear_jobs()
-		shutil.rmtree(jobs_path)
+	clear_jobs(jobs_path)
 	init_jobs(jobs_path)
 
 
-def test_job_create() -> None:
+def read_json(path : str) -> Any:
+	with open(path, 'r') as json_file:
+		return json.load(json_file)
+
+
+def copy_json(source_path : str, destination_path : str) -> None:
+	shutil.copyfile(source_path, destination_path)
+
+
+def test_create_job() -> None:
 	create_job('test_create_job')
 
-	with open('./.jobs/test_create_job.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	with open('tests/providers/test_create_job.json', 'r') as file_expect:
-		job_expect = json.load(file_expect)
+	job_actual = read_json('./.jobs/queued/test_create_job.json')
+	job_expect = read_json('tests/providers/test_create_job.json')
 
 	assert job_actual.get('version') == job_expect.get('version')
 	assert job_actual.get('date_created')
@@ -30,138 +36,51 @@ def test_job_create() -> None:
 	assert len(job_actual.get('steps')) == 0
 
 
-def test_job_create_and_delete() -> None:
-	create_job('test_job_create_and_delete')
-	assert os.path.exists('./.jobs/test_job_create_and_delete.json')
-
-	delete_job_file('test_job_create_and_delete')
-	assert not os.path.exists('./.jobs/test_job_create_and_delete.json')
-
-
-def test_create_job_with_one_step() -> None:
-	create_job('test_create_job_with_one_step')
-	add_step('test_create_job_with_one_step', [])
-
-	with open('./.jobs/test_create_job_with_one_step.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	with open('tests/providers/test_create_job_with_one_step.json', 'r') as file_expect:
-		job_expect = json.load(file_expect)
-
-	assert job_actual.get('steps') == job_expect.get('steps')
-	assert len(job_actual.get('steps')) == 1
+def test_add_step() -> None:
+	copy_json('tests/providers/test_job_add_step.json', './.jobs/queued/test_job_add_step.json')
+	assert get_total_steps('test_job_add_step') == 0
+	assert add_step('test_job_add_step', [ '-s', 'source.jpg', '-t', 'target.jpg', '-o', './output' ])
+	assert get_total_steps('test_job_add_step') == 1
 
 
-def test_create_job_add_two_steps_and_remove_one_step() -> None:
-	create_job('test_create_job_with_two_step')
-	add_step('test_create_job_with_two_step', [])
-	add_step('test_create_job_with_two_step', [])
+def test_remove_step() -> None:
+	copy_json('tests/providers/test_job_remove_step.json', './.jobs/queued/test_job_remove_step.json')
+	assert get_total_steps('test_job_remove_step') == 3
 
-	with open('./.jobs/test_create_job_with_two_step.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	with open('tests/providers/test_create_job_with_two_step.json', 'r') as file_expect:
-		job_expect = json.load(file_expect)
+	assert remove_step('test_job_remove_step', 0)
+	assert get_total_steps('test_job_remove_step') == 2
+	assert read_json('./.jobs/queued/test_job_remove_step.json').get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
 
-	assert job_actual.get('steps') == job_expect.get('steps')
-	assert len(job_actual.get('steps')) == 2
-
-	delete_step('test_create_job_with_two_step', 1)
-	with open('./.jobs/test_create_job_with_two_step.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	assert len(job_actual.get('steps')) == 1
-	assert not delete_step('test_create_job_with_two_step', 12345)
+	assert remove_step('test_job_remove_step', -1)
+	assert get_total_steps('test_job_remove_step') == 1
+	assert read_json('./.jobs/queued/test_job_remove_step.json').get('steps')[0].get('args') == [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
 
 
-def test_create_job_with_one_step_and_set_status() -> None:
-	create_job('test_create_job_with_one_step_and_set_status')
-	add_step('test_create_job_with_one_step_and_set_status', [])
+def test_insert_step() -> None:
+	copy_json('tests/providers/test_job_insert_step.json', './.jobs/queued/test_job_insert_step.json')
+	assert get_total_steps('test_job_insert_step') == 1
 
-	with open('./.jobs/test_create_job_with_one_step_and_set_status.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	with open('tests/providers/test_create_job_with_one_step_and_set_status.json', 'r') as file_expect:
-		job_expect = json.load(file_expect)
+	step = [ '-s', '123.jpg', '-t', '456.jpg', '-o', './output' ]
+	assert insert_step('test_job_insert_step', 0, step)
+	assert get_total_steps('test_job_insert_step') == 2
+	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[0].get('args') == step
 
-	assert job_actual.get('steps') == job_expect.get('steps')
-	assert len(job_actual.get('steps')) == 1
-
-	step_index = 0
-	set_step_status('test_create_job_with_one_step_and_set_status', step_index, 'completed')
-	with open('./.jobs/test_create_job_with_one_step_and_set_status.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	assert job_actual.get('steps')[step_index]['status'] == 'completed'
-	assert not set_step_status('test_create_job_with_one_step_and_set_status', 12345, 'completed')
+	step = ['-s', 'abc.jpg', '-t', 'def.jpg', '-o', './output']
+	assert insert_step('test_job_insert_step', -1, step)
+	assert get_total_steps('test_job_insert_step') == 3
+	assert read_json('./.jobs/queued/test_job_insert_step.json').get('steps')[-1].get('args') == step
 
 
-def test_create_job_with_one_step_and_set_action() -> None:
-	create_job('test_create_job_with_one_step_and_set_action')
-	add_step('test_create_job_with_one_step_and_set_action', [])
-
-	with open('./.jobs/test_create_job_with_one_step_and_set_action.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	with open('tests/providers/test_create_job_with_one_step_and_set_action.json', 'r') as file_expect:
-		job_expect = json.load(file_expect)
-
-	assert job_actual.get('steps') == job_expect.get('steps')
-	assert len(job_actual.get('steps')) == 1
-
-	step_index = 0
-	set_step_action('test_create_job_with_one_step_and_set_action', step_index, 'mix')
-	with open('./.jobs/test_create_job_with_one_step_and_set_action.json', 'r') as file_actual:
-		job_actual = json.load(file_actual)
-	assert job_actual.get('steps')[step_index]['action'] == 'mix'
-	assert not set_step_action('test_create_job_with_one_step_and_set_action', 12345, 'mix')
+def test_move_job() -> None:
+	copy_json('tests/providers/test_move_job.json', './.jobs/queued/test_move_job.json')
+	assert move_job_file('test_move_job', 'failed')
+	assert get_job_status('test_move_job') == 'failed'
+	assert move_job_file('test_move_job', 'completed')
+	assert get_job_status('test_move_job') == 'completed'
+	assert move_job_file('test_move_job', 'queued')
+	assert get_job_status('test_move_job') == 'queued'
 
 
-def test_move_job_file() -> None:
-	create_job('test_create_and_move_job_file_to_queued')
-	assert move_job_file('test_create_and_move_job_file_to_queued', 'queued')
-	assert os.path.exists('./.jobs/queued/test_create_and_move_job_file_to_queued.json')
-
-	create_job('test_create_and_move_job_file_to_failed')
-	assert move_job_file('test_create_and_move_job_file_to_failed', 'failed')
-	assert os.path.exists('./.jobs/failed/test_create_and_move_job_file_to_failed.json')
-
-	create_job('test_create_and_move_job_file_to_completed')
-	assert move_job_file('test_create_and_move_job_file_to_completed', 'completed')
-	assert os.path.exists('./.jobs/completed/test_create_and_move_job_file_to_completed.json') # todo: is this needed? move_job_file should be false when not, so you just have to test the return value of move_job_file()
-
-
-def test_add_remove_after_move_job_file() -> None:
-	create_job('test_add_remove_after_move_job_file_to_queued')
-	assert move_job_file('test_add_remove_after_move_job_file_to_queued', 'queued')
-	assert os.path.exists('./.jobs/queued/test_add_remove_after_move_job_file_to_queued.json')
-	assert add_step('test_add_remove_after_move_job_file_to_queued', [])
-	assert delete_step('test_add_remove_after_move_job_file_to_queued', 0)
-
-	create_job('test_add_remove_after_move_job_file_to_failed')
-	assert move_job_file('test_add_remove_after_move_job_file_to_failed', 'failed')
-	assert os.path.exists('./.jobs/failed/test_add_remove_after_move_job_file_to_failed.json')
-	assert add_step('test_add_remove_after_move_job_file_to_failed', [])
-	assert delete_step('test_add_remove_after_move_job_file_to_failed', 0)
-
-	create_job('test_add_remove_after_move_job_file_to_completed')
-	assert move_job_file('test_add_remove_after_move_job_file_to_completed', 'completed')
-	assert os.path.exists('./.jobs/completed/test_add_remove_after_move_job_file_to_completed.json')
-	assert add_step('test_add_remove_after_move_job_file_to_completed', [])
-	assert delete_step('test_add_remove_after_move_job_file_to_completed', 0)
-
-
-def test_filter_args() -> None:
-	register_args(['-s', '--source', '-t', '--target', '-o', '--output'], True)
-	register_args(['--face-analyser-order', '--face-analyser-age', '--face-analyser-gender', '--face-detector-model', '--face-detector-size', '--face-detector-score', '--face-landmarker-score'], True)
-	register_args(['--face-selector-mode', '--reference-face-position', '--reference-face-distance', '--reference-frame-number'],True)
-	register_args(['--face-mask-types', '--face-mask-blur', '--face-mask-padding', '--face-mask-regions'], True)
-	register_args(['--trim-frame-start', '--trim-frame-end', '--temp-frame-format'], True)
-	register_args(['--keep-temp'], False)
-	register_args(['--output-image-quality', '--output-image-resolution', '--output-video-encoder', '--output-video-preset', '--output-video-quality', '--output-video-resolution', '--output-video-fps'], True)
-	register_args(['--skip-audio'], False)
-	register_args(['--face-debugger-items'], True)
-	register_args(['--face-enhancer-model', '--face-enhancer-blend'], True)
-	register_args(['--face-swapper-model'], True)
-	register_args(['--frame-colorizer-model', '--frame-colorizer-blend', '--frame-colorizer-size'], True)
-	register_args(['--frame-enhancer-model', '--frame-enhancer-blend'], True)
-	register_args(['--lip-syncer-model'], True)
-	args = ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--job-run', '--skip-download', '--face-mask-padding', '0', '0', '0', '0']
-	assert filter_args(args) == ['-s', 'example.jpg', '-s', 'example2.jpg', '-t', 'example3.jpg', '--face-mask-padding', '0', '0', '0', '0']
-	# TODO : more detailed test
-
-	# todo: I would say most of the register_args() calls here are duplicated testing - you don't have to test them all
+def test_delete_job() -> None:
+	copy_json('tests/providers/test_delete_job.json', './.jobs/queued/test_delete_job.json')
+	assert delete_job_file('test_delete_job')

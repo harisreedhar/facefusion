@@ -127,7 +127,7 @@ Args = TypedDict('Args',
 })
 JobArgs = list[Optional[str]]
 JobStepAction = Literal['process', 'mix']
-JobStatus = Literal['unassigned', 'queued', 'completed', 'failed']
+JobStatus = Literal['queued', 'completed', 'failed']
 JobStepStatus = Literal['queued', 'completed', 'failed']
 JobStep = TypedDict('JobStep',
 {

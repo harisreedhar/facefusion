@@ -21,14 +21,14 @@ from facefusion.content_analyser import analyse_image, analyse_video
 from facefusion.processors.frame.core import get_frame_processors_modules, load_frame_processor_module
 from facefusion.common_helper import create_metavar, get_first, has_argument
 from facefusion.execution import encode_execution_providers, decode_execution_providers
-from facefusion.normalizer import normalize_output_path, normalize_padding, normalize_fps
+from facefusion.normalizer import normalize_output_path, normalize_padding, normalize_fps, normalize_job_argument
 from facefusion.memory import limit_system_memory
 from facefusion.statistics import conditional_log_statistics
 from facefusion.download import conditional_download
 from facefusion.filesystem import list_directory, get_temp_frame_paths, create_temp, move_temp, clear_temp, is_image, is_video, filter_audio_paths, resolve_relative_path
 from facefusion.ffmpeg import extract_frames, merge_video, copy_image, finalize_image, restore_audio, replace_audio
 from facefusion.vision import read_image, read_static_images, detect_image_resolution, restrict_video_fps, create_image_resolutions, get_video_frame, detect_video_resolution, detect_video_fps, restrict_video_resolution, restrict_image_resolution, create_video_resolutions, pack_resolution, unpack_resolution
-from facefusion.job_manager import init_jobs, create_job, add_step, delete_step, update_step, filter_args, delete_job_file
+from facefusion.job_manager import init_jobs, create_job, add_step, remove_step, filter_args, delete_job_file, insert_step
 from facefusion.job_runner import run_jobs
 
 onnxruntime.set_default_logger_severity(3)
@@ -119,16 +119,14 @@ def cli() -> None:
 	group_uis = program.add_argument_group('uis')
 	group_uis.add_argument('--ui-layouts', help = wording.get('help.ui_layouts').format(choices = ', '.join(available_ui_layouts)), default = config.get_str_list('uis.ui_layouts', 'default'), nargs = '+')
 	# jobs
-	# TODO: wording & default
 	group_jobs = program.add_argument_group('jobs')
-	group_jobs.add_argument('--job-run', help = wording.get('help.job_run'), action = 'store_true', default = False)
-	group_jobs.add_argument('--job-create', help = wording.get('help.job_id'), default = 'job_0')
-	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), default = 'job_0')
-	group_jobs.add_argument('--job-add-step', help = wording.get('help.job_add_step'), default = 'job_0') # TODO : index
-	group_jobs.add_argument('--job-delete-step', help = wording.get('help.job_delete_step'), default = 'job_0')
-	group_jobs.add_argument('--job-delete-step-index', help = wording.get('help.job_delete_step_index'), type = int, required = has_argument('--job-delete-step'))
-	group_jobs.add_argument('--job-update-step', help = wording.get('help.job_update_step'), default = 'job_0') # TODO : replace with delete & add
-	group_jobs.add_argument('--job-update-step-index', help = wording.get('help.job_update_step_index'), type = int, required = has_argument('--job-update-step'))
+	group_jobs.add_argument('--job-run', help = wording.get('help.job_run'), action = 'store_true')
+	group_jobs.add_argument('--job-create', help = wording.get('help.job_create'), type = str)
+	group_jobs.add_argument('--job-delete', help = wording.get('help.job_delete'), type = str)
+	group_jobs.add_argument('--job-add-step', help = wording.get('help.job_add_step'), type = str)
+	group_jobs.add_argument('--job-insert-step', help=wording.get('help.job_insert_step'), type = str, nargs = 2)
+	group_jobs.add_argument('--job-remove-step', help = wording.get('help.job_remove_step'), type = str, nargs = 2)
+	group_jobs.add_argument('--job-update-step', help = wording.get('help.job_update_step'), type = str, nargs = 2)
 	run(program)
 
 
@@ -229,58 +227,16 @@ def apply_args(program : ArgumentParser) -> None:
 	facefusion.globals.job_create = args.job_create
 	facefusion.globals.job_delete = args.job_delete
 	facefusion.globals.job_add_step = args.job_add_step
-	facefusion.globals.job_delete_step = args.job_delete_step
-	facefusion.globals.job_delete_step_index = args.job_delete_step_index
-	facefusion.globals.job_update_step = args.job_update_step
-	facefusion.globals.job_update_step_index = args.job_update_step_index
+	facefusion.globals.job_insert_step = normalize_job_argument(args.job_insert_step)
+	facefusion.globals.job_remove_step = normalize_job_argument(args.job_remove_step)
+	facefusion.globals.job_update_step = normalize_job_argument(args.job_update_step)
 
 
 def run(program : ArgumentParser) -> None:
 	validate_args(program)
 	apply_args(program)
 	logger.init(facefusion.globals.log_level)
-
-	# todo: move this job handling to a method - run() is just a router method, it does not contain too much logic
-	init_jobs('./.jobs')
-	# TODO: logger wording
-	if has_argument('--job-create'):
-		if create_job(facefusion.globals.job_create):
-			logger.info('job created', __name__.upper())
-		else:
-			logger.error('job creation failed', __name__.upper())
-		sys.exit(0)
-
-	if has_argument('--job-add-step'):
-		if add_step(facefusion.globals.job_add_step, filter_args(sys.argv)):
-			logger.info('step added', __name__.upper())
-		else:
-			logger.error('step not added', __name__.upper())
-		sys.exit(0)
-
-	if has_argument('--job-delete-step'):
-		if delete_step(facefusion.globals.job_delete_step, facefusion.globals.job_delete_step_index):
-			logger.info('step deleted', __name__.upper())
-		else:
-			logger.error('step not deleted', __name__.upper())
-		sys.exit(0)
-
-	if has_argument('--job-update-step'):
-		if update_step(facefusion.globals.job_update_step, facefusion.globals.job_update_step_index, filter_args(sys.argv)):
-			logger.info('step updated', __name__.upper())
-		else:
-			logger.error('step not updated', __name__.upper())
-		sys.exit(0)
-
-	if has_argument('--job-delete'):
-		if delete_job_file(facefusion.globals.job_delete):
-			logger.info('job file deleted', __name__.upper())
-		else:
-			logger.error('job file not updated', __name__.upper())
-		sys.exit(0)
-
-	if facefusion.globals.job_run:
-		run_jobs()
-		sys.exit(0)
+	handle_jobs()
 
 	if facefusion.globals.system_memory_limit > 0:
 		limit_system_memory(facefusion.globals.system_memory_limit)
@@ -301,6 +257,59 @@ def run(program : ArgumentParser) -> None:
 			if not ui_layout.pre_check():
 				return
 		ui.launch()
+
+
+def handle_jobs() -> None:
+	init_jobs('./.jobs')
+
+	if has_argument('--job-create'):
+		if create_job(facefusion.globals.job_create):
+			logger.info(wording.get('job_created'), __name__.upper())
+		else:
+			logger.error(wording.get('job_not_created'), __name__.upper())
+		sys.exit(0)
+
+	if has_argument('--job-delete'):
+		if delete_job_file(facefusion.globals.job_delete):
+			logger.info(wording.get('job_deleted'), __name__.upper())
+		else:
+			logger.error(wording.get('job_not_deleted'), __name__.upper())
+		sys.exit(0)
+
+	if has_argument('--job-add-step'):
+		if add_step(facefusion.globals.job_add_step, filter_args(sys.argv)):
+			logger.info(wording.get('job_step_added'), __name__.upper())
+		else:
+			logger.error(wording.get('job_step_not_added'), __name__.upper())
+		sys.exit(0)
+
+	if has_argument('--job-insert-step'):
+		job_id, step_index = facefusion.globals.job_insert_step
+		if insert_step(job_id, step_index, filter_args(sys.argv)):
+			logger.info(wording.get('job_step_inserted'), __name__.upper())
+		else:
+			logger.error(wording.get('job_step_not_inserted'), __name__.upper())
+		sys.exit(0)
+
+	if has_argument('--job-remove-step'):
+		job_id, step_index = facefusion.globals.job_remove_step
+		if remove_step(job_id, step_index):
+			logger.info(wording.get('job_step_removed'), __name__.upper())
+		else:
+			logger.error(wording.get('job_step_not_removed'), __name__.upper())
+		sys.exit(0)
+
+	if has_argument('--job-update-step'):
+		job_id, step_index = facefusion.globals.job_update_step
+		if remove_step(job_id, step_index) and insert_step(job_id, step_index, filter_args(sys.argv)):
+			logger.info(wording.get('job_step_updated'), __name__.upper())
+		else:
+			logger.error(wording.get('job_step_not_updated'), __name__.upper())
+		sys.exit(0)
+
+	if facefusion.globals.job_run:
+		run_jobs()
+		sys.exit(0)
 
 
 def destroy() -> None:

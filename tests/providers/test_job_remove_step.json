@@ -1,0 +1,23 @@
+{
+	"version": "1",
+	"date_created": "2024-01-01T00:00:00+0000",
+	"date_updated": null,
+	"steps":
+	[
+		{
+			"action": "process",
+			"args": ["-s", "source.jpg", "-t", "target.jpg", "-o", "./output"],
+			"status": "queued"
+		},
+		{
+			"action": "process",
+			"args": ["-s", "123.jpg", "-t", "456.jpg", "-o", "./output"],
+			"status": "queued"
+		},
+		{
+			"action": "process",
+			"args": ["-s", "abc.jpg", "-t", "def.jpg", "-o", "./output"],
+			"status": "queued"
+		}
+	]
+}

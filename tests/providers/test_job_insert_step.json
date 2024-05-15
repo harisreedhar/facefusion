@@ -6,12 +6,7 @@
 	[
 		{
 			"action": "process",
-			"args": [],
-			"status": "queued"
-		},
-		{
-			"action": "process",
-			"args": [],
+			"args": ["-s", "source.jpg", "-t", "target.jpg", "-o", "./output"],
 			"status": "queued"
 		}
 	]
