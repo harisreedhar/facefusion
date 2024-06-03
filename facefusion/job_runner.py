@@ -70,7 +70,7 @@ def apply_merge_action(job_id : str) -> bool:
 def extract_output_paths(job_id : str) -> Dict[str, list[str]]:
 	job = read_job_file(job_id)
 	steps = job.get('steps')
-	output_path_dict = {}
+	output_path_dict : Dict[str, list[str]] = {}
 
 	for step_index, step in enumerate(steps):
 		output_path = step.get('args').get('output_path')
